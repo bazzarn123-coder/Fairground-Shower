@@ -553,7 +553,8 @@
         function updateDifficulty() {
             // First 10 seconds (timeLeft > 35) move at 50% speed for warm-up phase
             const timeScale = (timeLeft > 35) ? 0.5 : 1.0;
-            const speedMultiplier = Math.min(2.5, 1 + (score / 500) * 0.15) * timeScale;
+            // Maximum speed multiplier cap reduced from 2.5 to 1.25 (half)
+            const speedMultiplier = Math.min(1.25, 1 + (score / 500) * 0.15) * timeScale;
             shelves.forEach(shelf => {
                 shelf.speed = shelf.baseSpeed * speedMultiplier;
             });
