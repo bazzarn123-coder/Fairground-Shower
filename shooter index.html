@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fairground Shooter</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #111;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #222;
+        }
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        /* Pre-splash Poster Screen */
+        #pre-splash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 200;
+            cursor: pointer;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #pre-splash img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Main Splash Screen */
+        #splash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 15, 0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.8rem;
+            color: #ffcc00;
+            text-shadow: 3px 3px #ff0000;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.1rem;
+            max-width: 450px;
+            line-height: 1.6;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        #final-score-board {
+            display: none;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: 2px solid #555;
+        }
+        .theme-selection {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .theme-card {
+            background: #222;
+            border: 2px solid #555;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            width: 110px;
+            text-align: center;
+            transition: transform 0.1s, border-color 0.1s;
+        }
+        .theme-card:hover {
+            border-color: #ffcc00;
+        }
+        .theme-card.selected {
+            border-color: #ffcc00;
+            background: #333;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            transform: scale(1.05);
+        }
+        .theme-icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .theme-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        .btn {
+            background: #ff3300;
+            color: #fff;
+            border: 3px solid #ffcc00;
+            padding: 16px 45px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            text-transform: uppercase;
+            box-shadow: 0 5px 0 #990000;
+            transition: transform 0.05s, box-shadow 0.05s;
+        }
+        .btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #990000;
+        }
+        #ui {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            z-index: 5;
+            text-shadow: 2px 2px 2px #000;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            pointer-events: auto;
+        }
+        .audio-btn {
+            background: #333;
+            color: #ffcc00;
+            border: 1px solid #ffcc00;
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        .audio-btn:active {
+            transform: translateY(1px);
+        }
+        #menu-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: #222;
+            color: #aaa;
+            border: 2px solid #555;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #000;
+            z-index: 5;
+        }
+        #menu-btn:hover {
+            color: #ffcc00;
+            border-color: #ffcc00;
+        }
+        #menu-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #000;
+        }
+        #can-indicator-container {
+            position: absolute;
+            bottom: 82px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 5px 12px;
+            border-radius: 15px;
+            border: 1px solid #555;
+            z-index: 5;
+            font-size: 0.8rem;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        #indicator-bulb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e74c3c;
+            box-shadow: 0 0 8px #e74c3c;
+        }
+        
+        /* Gameplay Control Bar - Only active during play */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: none; /* Hidden until game starts */
+            justify-content: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .control-btn {
+            background: #222;
+            color: #ffcc00;
+            border: 2px solid #ffcc00;
+            padding: 16px 45px;
+            min-width: 180px;
+            font-size: 1.3rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #000;
+            pointer-events: auto;
+            touch-action: manipulation;
+        }
+        .control-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Poster Promo Screen -->
+        <div id="pre-splash">
+            <img src="fairground.jpg" alt="Fairground Shooter">
+        </div>
+
+        <!-- Splash Screen Menu -->
+        <div id="splash">
+            <h1>FAIRGROUND SHOOTER</h1>
+            <p>Choose your target theme! Shoot golden targets (+300) for bonus points and avoid explosive bombs (💣)!</p>
+            
+            <div id="final-score-board">
+                <div id="splash-final-score" style="font-size: 1.4rem; color: #fff; margin-bottom: 5px;">Final Score: 0</div>
+                <div id="splash-high-score" style="font-size: 1.1rem; color: #ffcc00;">Best Score: 0</div>
+            </div>
+
+            <div class="theme-selection">
+                <div class="theme-card selected" data-theme="ducks">
+                    <span class="theme-icon">🐤</span>
+                    <span class="theme-title">RUBBER DUCKS</span>
+                </div>
+                <div class="theme-card" data-theme="targets">
+                    <span class="theme-icon">🎯</span>
+                    <span class="theme-title">ROUND TARGETS</span>
+                </div>
+                <div class="theme-card" data-theme="cans">
+                    <span class="theme-icon">🥫</span>
+                    <span class="theme-title">TIN CANS</span>
+                </div>
+            </div>
+
+            <button class="btn" id="start-btn">PLAY NOW</button>
+        </div>
+
+        <!-- Gameplay UI Overlay -->
+        <div id="ui">
+            <div id="score-display">SCORE: 0</div>
+            <div id="high-score-display">HIGH: 0</div>
+            <div id="ammo-display">AMMO: 6/6</div>
+            <div id="time-display">TIME: 45</div>
+            <button class="audio-btn" id="audio-toggle-btn">🔊 SFX ON</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <button id="menu-btn">MENU</button>
+        <div id="can-indicator-container">
+            <div id="indicator-bulb"></div>
+            <span id="indicator-text">MATCH CAN</span>
+        </div>
+        <div id="controls">
+            <button class="control-btn" id="reload-btn">RELOAD</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const preSplash = document.getElementById('pre-splash');
+        const splash = document.getElementById('splash');
+        const controls = document.getElementById('controls');
+        const startBtn = document.getElementById('start-btn');
+        const reloadBtn = document.getElementById('reload-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const audioToggleBtn = document.getElementById('audio-toggle-btn');
+        const scoreDisplay = document.getElementById('score-display');
+        const highScoreDisplay = document.getElementById('high-score-display');
+        const ammoDisplay = document.getElementById('ammo-display');
+        const timeDisplay = document.getElementById('time-display');
+        const canIndicatorContainer = document.getElementById('can-indicator-container');
+        const indicatorBulb = document.getElementById('indicator-bulb');
+        const indicatorText = document.getElementById('indicator-text');
+        const finalScoreBoard = document.getElementById('final-score-board');
+        const splashFinalScore = document.getElementById('splash-final-score');
+        const splashHighScore = document.getElementById('splash-high-score');
+
+        // Dismiss Pre-Splash Promo on Tap
+        preSplash.addEventListener('pointerdown', () => {
+            preSplash.style.display = 'none';
+        });
+
+        let width, height;
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Game State & Metrics
+        let gameState = 'SPLASH'; // SPLASH, PLAYING, GAMEOVER
+        let selectedTheme = 'ducks';
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('fairground_high_score')) || 0;
+        let ammo = 6;
+        const maxAmmo = 6;
+        let timeLeft = 45;
+        let timerInterval = null;
+        let colorSwitchTimer = null;
+        let soundMuted = false;
+        
+        const canColors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6'];
+        let activeCanColorIndex = 0;
+
+        let targets = [];
+        let particles = [];
+        let floatTexts = [];
+        let impacts = [];
+        let shelves = [];
+
+        const baseShelfSpeeds = [2, -2.5, 3];
+
+        // Audio Context setup
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (soundMuted || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'shoot') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'hit') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'bonus' || type === 'match') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(500, now);
+                    osc.frequency.exponentialRampToValueAtTime(1000, now + 0.25);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'bomb') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.35);
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'empty') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'reload') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.linearRampToValueAtTime(800, now + 0.2);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                }
+            } catch(e) {}
+        }
+
+        // Audio Toggle
+        audioToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            soundMuted = !soundMuted;
+            audioToggleBtn.innerText = soundMuted ? '🔇 SFX OFF' : '🔊 SFX ON';
+        });
+
+        // Theme selection
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedTheme = card.dataset.theme;
+            });
+        });
+
+        function updateIndicatorLight() {
+            const currentColor = canColors[activeCanColorIndex];
+            indicatorBulb.style.background = currentColor;
+            indicatorBulb.style.boxShadow = `0 0 10px ${currentColor}`;
+            let colorName = 'RED';
+            if (currentColor === '#3498db') colorName = 'BLUE';
+            else if (currentColor === '#2ecc71') colorName = 'GREEN';
+            else if (currentColor === '#f1c40f') colorName = 'YELLOW';
+            else if (currentColor === '#9b59b6') colorName = 'PURPLE';
+            indicatorText.innerText = `HIT ${colorName}`;
+        }
+
+        // Setup Shelves & Game State
+        function setupGame() {
+            score = 0;
+            ammo = maxAmmo;
+            timeLeft = 45;
+            targets = [];
+            particles = [];
+            floatTexts = [];
+            impacts = [];
+            
+            shelves = [
+                { y: height * 0.3, baseSpeed: baseShelfSpeeds[0], speed: baseShelfSpeeds[0] * 0.5 },
+                { y: height * 0.48, baseSpeed: baseShelfSpeeds[1], speed: baseShelfSpeeds[1] * 0.5 },
+                { y: height * 0.66, baseSpeed: baseShelfSpeeds[2], speed: baseShelfSpeeds[2] * 0.5 }
+            ];
+
+            if (colorSwitchTimer) clearInterval(colorSwitchTimer);
+            if (selectedTheme === 'cans') {
+                canIndicatorContainer.style.display = 'flex';
+                activeCanColorIndex = Math.floor(Math.random() * canColors.length);
+                updateIndicatorLight();
+                colorSwitchTimer = setInterval(() => {
+                    if (gameState === 'PLAYING') {
+                        activeCanColorIndex = (activeCanColorIndex + 1) % canColors.length;
+                        updateIndicatorLight();
+                    }
+                }, 5000);
+            } else {
+                canIndicatorContainer.style.display = 'none';
+            }
+
+            shelves.forEach((shelf, shelfIndex) => {
+                for (let i = 0; i < 3; i++) {
+                    spawnTarget(shelfIndex, i * 200 + 100);
+                }
+            });
+
+            updateUI();
+        }
+
+        function spawnTarget(shelfIndex, customX) {
+            const shelf = shelves[shelfIndex];
+            const activeBombs = targets.filter(t => t.type === 'bomb' && !t.hit).length;
+
+            const rand = Math.random();
+            let type = 'normal';
+            if (rand > 0.85 && activeBombs < 2) {
+                type = 'bomb';
+            } else if (rand > 0.70) {
+                type = 'gold';
+            }
+
+            targets.push({
+                x: customX !== undefined ? customX : (shelf.speed > 0 ? -50 : width + 50),
+                y: shelf.y - 45,
+                width: selectedTheme === 'targets' ? 44 : 40,
+                height: 45,
+                shelfIndex: shelfIndex,
+                type: type,
+                color: type === 'gold' ? '#ffd700' : (type === 'bomb' ? '#222' : canColors[Math.floor(Math.random() * canColors.length)]),
+                hit: false,
+                vy: 0,
+                vx: 0,
+                rot: 0,
+                vrot: 0
+            });
+        }
+
+        function updateUI() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('fairground_high_score', highScore);
+            }
+            scoreDisplay.innerText = `SCORE: ${score}`;
+            highScoreDisplay.innerText = `HIGH: ${highScore}`;
+            ammoDisplay.innerText = `AMMO: ${ammo}/${maxAmmo}`;
+            timeDisplay.innerText = `TIME: ${Math.max(0, timeLeft)}`;
+        }
+
+        function updateDifficulty() {
+            // First 10 seconds (timeLeft > 35) move at 50% speed for warm-up phase
+            const timeScale = (timeLeft > 35) ? 0.5 : 1.0;
+            const speedMultiplier = Math.min(2.5, 1 + (score / 500) * 0.15) * timeScale;
+            shelves.forEach(shelf => {
+                shelf.speed = shelf.baseSpeed * speedMultiplier;
+            });
+        }
+
+        function addFloatingText(text, x, y, color) {
+            floatTexts.push({
+                text: text,
+                x: x,
+                y: y,
+                color: color,
+                life: 40,
+                vy: -1.5
+            });
+        }
+
+        // Precision Shooting Handler
+        function handleShoot(clientX, clientY) {
+            if (gameState !== 'PLAYING') return;
+            initAudio();
+
+            // Precise canvas coordinate calculation
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+
+            impacts.push({ x, y, life: 20 });
+
+            if (ammo <= 0) {
+                playSound('empty');
+                return;
+            }
+
+            ammo--;
+            playSound('shoot');
+
+            const tolerance = 8; // Extra touch padding margin for accurate hitboxes
+
+            for (let i = targets.length - 1; i >= 0; i--) {
+                let t = targets[i];
+                if (!t.hit && 
+                    x >= (t.x - tolerance) && 
+                    x <= (t.x + t.width + tolerance) && 
+                    y >= (t.y - tolerance) && 
+                    y <= (t.y + t.height + tolerance)) {
+                    
+                    t.hit = true;
+                    t.vy = -8 - Math.random() * 5;
+                    t.vx = (Math.random() - 0.5) * 6;
+                    t.vrot = (Math.random() - 0.5) * 0.2;
+
+                    if (t.type === 'gold') {
+                        score += 300;
+                        playSound('bonus');
+                        addFloatingText('+300 BONUS!', t.x, t.y, '#ffd700');
+                    } else if (t.type === 'bomb') {
+                        score = Math.max(0, score - 150);
+                        timeLeft = Math.max(0, timeLeft - 5);
+                        playSound('bomb');
+                        addFloatingText('-150 PTS! -5s!', t.x, t.y, '#ff3333');
+                    } else {
+                        if (selectedTheme === 'cans' && t.color === canColors[activeCanColorIndex]) {
+                            score += 400;
+                            playSound('match');
+                            addFloatingText('+400 COLOR MATCH!', t.x, t.y, canColors[activeCanColorIndex]);
+                        } else {
+                            score += 100;
+                            playSound('hit');
+                            addFloatingText('+100', t.x, t.y, '#ffffff');
+                        }
+                    }
+
+                    updateDifficulty();
+
+                    const particleColor = t.type === 'bomb' ? '#ff4400' : (t.type === 'gold' ? '#ffe600' : (selectedTheme === 'ducks' ? '#ffcc00' : t.color));
+                    const pCount = t.type === 'bomb' ? 20 : 12;
+                    for (let p = 0; p < pCount; p++) {
+                        particles.push({
+                            x: t.x + t.width / 2,
+                            y: t.y + t.height / 2,
+                            vx: (Math.random() - 0.5) * 10,
+                            vy: (Math.random() - 0.5) * 10,
+                            radius: Math.random() * 4 + 2,
+                            color: particleColor,
+                            life: 30
+                        });
+                    }
+
+                    setTimeout(() => {
+                        if (gameState === 'PLAYING') {
+                            const shelf = shelves[t.shelfIndex];
+                            spawnTarget(t.shelfIndex, shelf.speed > 0 ? -50 : width + 50);
+                        }
+                    }, 1200);
+
+                    break;
+                }
+            }
+            updateUI();
+        }
+
+        canvas.addEventListener('pointerdown', (e) => {
+            handleShoot(e.clientX, e.clientY);
+        });
+
+        // Fast & Responsive Reload Handling
+        function triggerReload(e) {
+            if (e) e.preventDefault();
+            if (gameState === 'PLAYING' && ammo < maxAmmo) {
+                initAudio();
+                ammo = maxAmmo;
+                playSound('reload');
+                updateUI();
+            }
+        }
+        reloadBtn.addEventListener('pointerdown', triggerReload);
+        reloadBtn.addEventListener('touchstart', triggerReload);
+
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (gameState === 'PLAYING') {
+                if (timerInterval) clearInterval(timerInterval);
+                if (colorSwitchTimer) clearInterval(colorSwitchTimer);
+                canIndicatorContainer.style.display = 'none';
+                controls.style.display = 'none';
+                finalScoreBoard.style.display = 'none';
+                gameState = 'SPLASH';
+                splash.style.display = 'flex';
+                startBtn.innerText = 'PLAY NOW';
+            }
+        });
+
+        startBtn.addEventListener('click', () => {
+            initAudio();
+            finalScoreBoard.style.display = 'none';
+            splash.style.display = 'none';
+            controls.style.display = 'flex'; // Display reload button ONLY during gameplay
+            gameState = 'PLAYING';
+            setupGame();
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (gameState === 'PLAYING') {
+                    timeLeft--;
+                    updateDifficulty(); // Dynamically update speed as warm-up finishes
+                    updateUI();
+                    if (timeLeft <= 0) {
+                        gameState = 'GAMEOVER';
+                        clearInterval(timerInterval);
+                    }
+                }
+            }, 1000);
+        });
+
+        // Theme Background Rendering
+        function drawBackground() {
+            if (selectedTheme === 'ducks') {
+                const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+                bgGrad.addColorStop(0, '#87CEEB');
+                bgGrad.addColorStop(0.7, '#E0F7FA');
+                bgGrad.addColorStop(1, '#00838F');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.beginPath();
+                ctx.arc(width * 0.2, height * 0.15, 30, 0, Math.PI * 2);
+                ctx.arc(width * 0.25, height * 0.13, 20, 0, Math.PI * 2);
+                ctx.arc(width * 0.15, height * 0.14, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(width * 0.75, height * 0.1, 40, 0, Math.PI * 2);
+                ctx.arc(width * 0.82, height * 0.08, 25, 0, Math.PI * 2);
+                ctx.arc(width * 0.68, height * 0.09, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (selectedTheme === 'targets') {
+                const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+                bgGrad.addColorStop(0, '#1c2833');
+                bgGrad.addColorStop(1, '#2c3e50');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < width; x += 60) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < height; y += 60) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+
+            } else {
+                const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+                bgGrad.addColorStop(0, '#1a0033');
+                bgGrad.addColorStop(0.6, '#4a154b');
+                bgGrad.addColorStop(1, '#1b002b');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, 40);
+                ctx.quadraticCurveTo(width / 2, 90, width, 40);
+                ctx.stroke();
+
+                const bulbColors = ['#ff3333', '#ffff33', '#33ff33', '#33ffff', '#ff33ff'];
+                for (let x = 30; x < width; x += 70) {
+                    let t = x / width;
+                    let y = 40 * (1 - t) + 40 * t + Math.sin(t * Math.PI) * 50;
+                    ctx.fillStyle = bulbColors[(x / 70) % bulbColors.length | 0];
+                    ctx.beginPath();
+                    ctx.arc(x, y + 10, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            shelves.forEach(shelf => {
+                ctx.fillStyle = '#8b5a2b';
+                ctx.fillRect(0, shelf.y, width, 12);
+                ctx.fillStyle = '#5c3a21';
+                ctx.fillRect(0, shelf.y + 12, width, 6);
+            });
+
+            if (selectedTheme === 'ducks') {
+                ctx.save();
+                ctx.globalAlpha = 0.2;
+                ctx.fillStyle = '#ffffff';
+                
+                const toyPositions = [
+                    { x: width * 0.15, y: height * 0.2 },
+                    { x: width * 0.85, y: height * 0.2 },
+                    { x: width * 0.25, y: height * 0.82 },
+                    { x: width * 0.75, y: height * 0.82 }
+                ];
+
+                toyPositions.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 22, 0, Math.PI * 2);
+                    ctx.arc(p.x, p.y - 25, 15, 0, Math.PI * 2);
+                    ctx.arc(p.x - 14, p.y - 36, 6, 0, Math.PI * 2);
+                    ctx.arc(p.x + 14, p.y - 36, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.restore();
+            }
+        }
+
+        function drawDuck(t) {
+            ctx.save();
+            ctx.translate(t.x + t.width / 2, t.y + t.height / 2);
+            ctx.rotate(t.rot);
+
+            if (shelves[t.shelfIndex].speed < 0) {
+                ctx.scale(-1, 1);
+            }
+
+            if (t.type === 'bomb') {
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.arc(0, 0, 16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ff9900';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(0, -16);
+                ctx.quadraticCurveTo(8, -24, 4, -28);
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('💣', 0, 5);
+            } else {
+                ctx.fillStyle = t.type === 'gold' ? '#ffd700' : '#ffcc00';
+                if (t.type === 'gold') {
+                    ctx.shadowColor = '#ffe600';
+                    ctx.shadowBlur = 10;
+                }
+                ctx.beginPath();
+                ctx.ellipse(-2, 5, 18, 13, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(8, -8, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ff6600';
+                ctx.beginPath();
+                ctx.ellipse(17, -6, 6, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.arc(10, -10, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = t.type === 'gold' ? '#e6c200' : '#e6b800';
+                ctx.beginPath();
+                ctx.ellipse(-5, 5, 8, 5, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function drawTarget(t) {
+            ctx.save();
+            ctx.translate(t.x + t.width / 2, t.y + t.height / 2);
+            ctx.rotate(t.rot);
+
+            const radius = 22;
+
+            if (t.type === 'bomb') {
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ff3333';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('💣', 0, 6);
+            } else {
+                if (t.type === 'gold') {
+                    ctx.shadowColor = '#ffe600';
+                    ctx.shadowBlur = 12;
+                }
+                const mainColor = t.type === 'gold' ? '#ffd700' : '#e74c3c';
+
+                ctx.fillStyle = mainColor;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, 0, radius * 0.68, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = mainColor;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#7f8c8d';
+                ctx.fillRect(-3, radius, 6, 10);
+            }
+
+            ctx.restore();
+        }
+
+        function drawCan(t) {
+            ctx.save();
+            ctx.translate(t.x + t.width / 2, t.y + t.height / 2);
+            ctx.rotate(t.rot);
+            
+            if (t.type === 'bomb') {
+                ctx.fillStyle = '#222';
+                ctx.fillRect(-t.width / 2, -t.height / 2, t.width, t.height);
+                ctx.fillStyle = '#ff3333';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('💣', 0, 5);
+                ctx.strokeStyle = '#ff3333';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-t.width / 2, -t.height / 2, t.width, t.height);
+            } else {
+                if (t.type === 'gold') {
+                    ctx.shadowColor = '#ffe600';
+                    ctx.shadowBlur = 12;
+                }
+                ctx.fillStyle = t.color;
+                ctx.fillRect(-t.width / 2, -t.height / 2, t.width, t.height);
+
+                ctx.fillStyle = t.type === 'gold' ? '#fff8dc' : '#fff';
+                ctx.fillRect(-t.width / 2, -t.height / 4, t.width, t.height / 2);
+
+                if (selectedTheme === 'cans' && t.color === canColors[activeCanColorIndex]) {
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(-t.width / 2, -t.height / 2, t.width, t.height);
+                }
+
+                ctx.strokeStyle = '#222';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-t.width / 2, -t.height / 2, t.width, t.height);
+            }
+
+            ctx.restore();
+        }
+
+        // Main Animation Loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, width, height);
+
+            drawBackground();
+
+            if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
+                for (let i = targets.length - 1; i >= 0; i--) {
+                    let t = targets[i];
+
+                    if (!t.hit) {
+                        const shelf = shelves[t.shelfIndex];
+                        t.x += shelf.speed;
+                        if (shelf.speed > 0 && t.x > width + 50) t.x = -50;
+                        if (shelf.speed < 0 && t.x < -50) t.x = width + 50;
+                    } else {
+                        t.x += t.vx;
+                        t.y += t.vy;
+                        t.vy += 0.5;
+                        t.rot += t.vrot;
+                    }
+
+                    if (selectedTheme === 'ducks') {
+                        drawDuck(t);
+                    } else if (selectedTheme === 'targets') {
+                        drawTarget(t);
+                    } else {
+                        drawCan(t);
+                    }
+
+                    if (t.y > height + 100) {
+                        targets.splice(i, 1);
+                    }
+                }
+
+                for (let i = floatTexts.length - 1; i >= 0; i--) {
+                    let ft = floatTexts[i];
+                    ft.y += ft.vy;
+                    ft.life--;
+                    ctx.fillStyle = ft.color;
+                    ctx.font = 'bold 1.2rem Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(ft.text, ft.x, ft.y);
+                    if (ft.life <= 0) floatTexts.splice(i, 1);
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+
+                for (let i = impacts.length - 1; i >= 0; i--) {
+                    let imp = impacts[i];
+                    imp.life--;
+                    ctx.strokeStyle = 'rgba(255, 255, 0, ' + (imp.life / 20) + ')';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(imp.x, imp.y, 8 + (20 - imp.life), 0, Math.PI * 2);
+                    ctx.stroke();
+                    if (imp.life <= 0) impacts.splice(i, 1);
+                }
+            }
+
+            if (gameState === 'GAMEOVER') {
+                canIndicatorContainer.style.display = 'none';
+                controls.style.display = 'none';
+                if (colorSwitchTimer) clearInterval(colorSwitchTimer);
+
+                splashFinalScore.innerText = `Final Score: ${score}`;
+                splashHighScore.innerText = `Best Score: ${highScore}`;
+                finalScoreBoard.style.display = 'block';
+
+                splash.style.display = 'flex';
+                startBtn.innerText = 'PLAY AGAIN';
+                gameState = 'SPLASH_WAIT';
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        highScoreDisplay.innerText = `HIGH: ${highScore}`;
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
